@@ -1,0 +1,1 @@
+python GNC2.py --ckpt_path ./saved_models/resnext50-face-d512-tau50.0-epoch200-lr0.1/ --device cuda:1
