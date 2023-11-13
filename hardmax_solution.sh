@@ -1,0 +1,1 @@
+nohup python -u hardmax_solution.py >> hardmaxs.log 2>&1 &

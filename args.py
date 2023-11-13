@@ -18,6 +18,10 @@ def get_train_arguments():
                                                                             "densenet121", "inceptionv3", "ViT", "mobilenet", "mobilenetv2"])
     parser.add_argument("--feature_dim", type=int, default=10)
     parser.add_argument("--num_classes", type=int, default=100)
+    parser.add_argument("--devices", type=str, default="0, 1")
+
+    # training in standard way, no normalization for classifier and feature
+    parser.add_argument('--no_normalization', action='store_true')
 
     # CMF(Class-Mean Feature Classifier)
     parser.add_argument('--CMFClassifier', action='store_true')
@@ -29,6 +33,8 @@ def get_train_arguments():
     parser.add_argument("--weight_decay", type=float, default=5e-4)#
 
     parser.add_argument('--temperature', type=float, default=7)
+
+    parser.add_argument("--loss", type=str, default="CE", choices=["CE", "Hardmax"])
 
 
     # Trainer Arguments
@@ -58,6 +64,8 @@ def get_eval_arguments():
                                  "densenet121", "inceptionv3", "ViT", "mobilenet", "mobilenetv2"])
     parser.add_argument("--feature_dim", type=int, default=10)
     parser.add_argument("--num_classes", type=int, default=100)
+    parser.add_argument('--temperature', type=float, default=10.0)
+    parser.add_argument("--loss", type=str, default="CE", choices=["CE", "Hardmax"])
 
 
     args = parser.parse_args()

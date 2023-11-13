@@ -96,35 +96,59 @@ def compute_Sigma_B(mu_c_dict, mu_G):
     K = len(mu_c_dict)
     for i in range(K):
         Sigma_B += (mu_c_dict[i] - mu_G).unsqueeze(1) @ (mu_c_dict[i] - mu_G).unsqueeze(0)
-
+    #check mu_G is 0?
+    print(torch.norm(mu_G))
     Sigma_B /= K
 
     return Sigma_B.cpu().numpy()
 
 
 def main(args):
-    seed_everything(0)
+    seed_everything(1)
     print(args)
 
     data = DataModule(args)
     train_dataloader = data.train_dataloader()
 
     nc1_list = []
-    for i in range(20):
-        print(f"Loading checkpoint from {args.ckpt_path}: epoch={i * 10 + 9}.ckpt")
-        ckpt_path = os.path.join(args.ckpt_path, f"epoch={i * 10 + 9}.ckpt")
-        model = ModelModule.load_from_checkpoint(ckpt_path).to(args.device)
-        #model = ModelModule(args).to(args.device)
 
-        mu_G, mu_c_dict= compute_info(args = args,  model = model, dataloader = train_dataloader)
+    # initial checkpoint NC:
+    # i = -1
+    # print("Initial checkpoint:")
+    # model = ModelModule(args).to(args.device)
 
-        Sigma_W = compute_Sigma_W(args = args, model = model, mu_c_dict = mu_c_dict, dataloader = train_dataloader)
-        Sigma_B = compute_Sigma_B(mu_c_dict = mu_c_dict, mu_G = mu_G)
+    # print("computing info...")
+    # mu_G, mu_c_dict = compute_info(args=args, model=model, dataloader=train_dataloader)
 
-        NC1 = np.trace(Sigma_W @ scilin.pinv(Sigma_B)) / len(mu_c_dict)
+    # print("Sigma_W...")
+    # Sigma_W = compute_Sigma_W(args=args, model=model, mu_c_dict=mu_c_dict, dataloader=train_dataloader)
+    # print("Sigma_B...")
+    # Sigma_B = compute_Sigma_B(mu_c_dict=mu_c_dict, mu_G=mu_G)
 
-        nc1_list.append(NC1)
-        print(f"epoch: {i * 10 + 9}, NC1: {NC1}, log(NC1): {np.log(NC1)}")
+    # NC1 = np.trace(Sigma_W @ scilin.pinv(Sigma_B)) / len(mu_c_dict)
+
+    # nc1_list.append(NC1)
+    # print(f"epoch: {i * 10 + 9}, NC1: {NC1}, log(NC1): {np.log(NC1)}")
+
+    #for i in range(20):
+    i = 19
+    print(f"Loading checkpoint from {args.ckpt_path}: epoch={i * 10 + 9}.ckpt")
+    ckpt_path = os.path.join(args.ckpt_path, f"epoch={i * 10 + 9}.ckpt")
+    model = ModelModule.load_from_checkpoint(ckpt_path).to(args.device)
+    #model = ModelModule(args).to(args.device)
+
+    print("computing info...")
+    mu_G, mu_c_dict= compute_info(args = args,  model = model, dataloader = train_dataloader)
+
+    print("Sigma_W...")
+    Sigma_W = compute_Sigma_W(args = args, model = model, mu_c_dict = mu_c_dict, dataloader = train_dataloader)
+    print("Sigma_B...")
+    Sigma_B = compute_Sigma_B(mu_c_dict = mu_c_dict, mu_G = mu_G)
+
+    NC1 = np.trace(Sigma_W @ scilin.pinv(Sigma_B)) / len(mu_c_dict)
+
+    nc1_list.append(NC1)
+    print(f"epoch: {i * 10 + 9}, NC1: {NC1}, log(NC1): {np.log(NC1)}")
 
     print("NC1 list:", nc1_list)
 

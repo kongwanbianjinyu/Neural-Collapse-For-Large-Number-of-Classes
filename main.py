@@ -25,9 +25,12 @@ def main(args):
     if args.CMFClassifier:
         logger_name = 'CMF-{}-{}-d{}-tau{}-epoch{}-lr{}-momentum-{}'.format(args.encoder, args.dataset, args.feature_dim,
                                                             args.temperature, args.max_epochs, args.learning_rate, args.CMF_momentum)
-    else:
-        logger_name = '{}-{}-d{}-tau{}-epoch{}-lr{}'.format(args.encoder, args.dataset, args.feature_dim,
-                                                            args.temperature, args.max_epochs, args.learning_rate)
+    elif args.no_normalization:
+        logger_name = '{}-{}-d{}-tau{}-epoch{}-lr{}-loss{}-no_normalization'.format(args.encoder, args.dataset, args.feature_dim,
+                                                            args.temperature, args.max_epochs, args.learning_rate, args.loss)
+    else: 
+        logger_name = '{}-{}-d{}-tau{}-epoch{}-lr{}-loss{}'.format(args.encoder, args.dataset, args.feature_dim,
+                                                            args.temperature, args.max_epochs, args.learning_rate, args.loss)
     wandb_logger = WandbLogger(project='NCLargeNumClasses',
                                log_model=False,
                                name=logger_name)
@@ -40,14 +43,14 @@ def main(args):
                                           save_top_k = -1,
                                           every_n_epochs = args.save_every_n_epochs)
     # trainer
-    trainer = pl.Trainer(devices=[6,7],
+    trainer = pl.Trainer(devices=args.devices,
                          accelerator="gpu",
                          precision=16,
                          strategy = DDPStrategy(find_unused_parameters=False),
                          max_epochs = args.max_epochs,
                          logger=wandb_logger,
                          callbacks=[checkpoint_callback, RichProgressBar()],
-                         #resume_from_checkpoint="./saved_models/resnet18-face-d512-tau10.0-epoch200-lr0.1/last.ckpt"
+                         #resume_from_checkpoint="./saved_models/resnext50-face-d512-tau50.0-epoch200-lr0.1/last.ckpt"
                          )
                          #resume_from_checkpoint="./saved_models/SimCLR-resnet_cifar_compact-cifar100_pair-epoch1000/epoch=199.ckpt")
     # train

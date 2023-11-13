@@ -6,6 +6,16 @@ import torchvision
 from encoders import *
 import torch.nn.functional as F
 
+def hardmax_loss(W, H, y):
+    # H [B,d], W [d, K]
+    HW = H @ W
+    yt = y.unsqueeze(1)
+    new_HW = HW - HW.gather(1, yt)
+    rows = torch.arange(H.shape[0]) # range(B)
+    new_HW[rows, y] = -torch.inf
+    loss = 100 * torch.max(new_HW)
+    return loss
+
 
 class CMFWeights(nn.Module):
     def __init__(
@@ -47,6 +57,7 @@ class ModelModule(pl.LightningModule):
             self.encoder = resnet50(args.feature_dim)
         elif args.encoder == "resnext50":
             self.encoder = resnext50(args.feature_dim)
+            #self.resnet = resnext50(args.feature_dim)
         elif args.encoder == "resnext101":
             self.encoder = resnext101(args.feature_dim)
         elif args.encoder == "densenet121":
@@ -60,11 +71,11 @@ class ModelModule(pl.LightningModule):
         elif args.encoder == "mobilenetv2":
             self.encoder = mobilenetv2(args.feature_dim)
 
-        use CMF classifier or linear classifier
-        if args.CMFClassifier:
-            self.CMFweights = CMFWeights(num_classes=args.num_classes, feature_dim=args.feature_dim)
-        else:
-            self.linear = nn.Linear(args.feature_dim, args.num_classes, bias=False)
+        #use CMF classifier or linear classifier
+        # if args.CMFClassifier:
+        #     self.CMFweights = CMFWeights(num_classes=args.num_classes, feature_dim=args.feature_dim)
+        # else:
+        self.linear = nn.Linear(args.feature_dim, args.num_classes, bias=False)
 
         self.criterion = torch.nn.CrossEntropyLoss()
         # define acc
@@ -72,19 +83,32 @@ class ModelModule(pl.LightningModule):
 
     def forward(self, batch, stage):
         x,y = batch
-        features = self.encoder(x)
-        features = F.normalize(features)
 
-        if self.args.CMFClassifier:
-            if stage == "train":
-                self.CMFweights.update(features=features, labels=y, momentum=self.args.CMF_momentum)
-            weights = self.CMFweights.weight
+        if self.args.no_normalization:
+            features = self.encoder(x)
+            weights = self.linear.weight
+            logits = features @ weights.t()
+            loss = self.criterion(logits, y)
         else:
+            features = self.encoder(x)
+            #features = self.resnet(x)
+            features = F.normalize(features)
+
+            # if self.args.CMFClassifier:
+            #     if stage == "train":
+            #         self.CMFweights.update(features=features, labels=y, momentum=self.args.CMF_momentum)
+            #     weights = self.CMFweights.weight
+            # else:
             weights = F.normalize(self.linear.weight)
 
-        logits = (features @ weights.t()) * self.args.temperature
-        #logits = self.linear(features)
-        loss = self.criterion(logits, y)
+
+            if self.args.loss == "CE":
+                logits = (features @ weights.t()) * self.args.temperature
+                #logits = self.linear(features)
+                loss = self.criterion(logits, y)
+            elif self.args.loss == "Hardmax":
+                loss = hardmax_loss(W = weights.t(), H = features, y = y)
+                logits = (features @ weights.t()) * 1000
         accuracy = self.accuracy(logits, y)
 
         return loss, accuracy

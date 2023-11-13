@@ -93,21 +93,42 @@ def main(args):
     w_list = []
     h_list = []
 
-    for i in range(20):
-        print(f"Loading checkpoint from {args.ckpt_path}: epoch={i * 10 + 9}.ckpt")
-        ckpt_path = os.path.join(args.ckpt_path, f"epoch={i * 10 + 9}.ckpt")
-        model = ModelModule.load_from_checkpoint(ckpt_path).to(args.device)
+    # initial checkpoint NC:
+    i = -1
+    print("Initial checkpoint:")
+    model = ModelModule(args).to(args.device)
 
-        mu_G, mu_c_dict = compute_info(args = args,  model = model, dataloader = train_dataloader)
+    print("computing info...")
+    mu_G, mu_c_dict = compute_info(args=args, model=model, dataloader=train_dataloader)
 
-        w = model.linear.weight.detach().cpu()
+    w = model.linear.weight.detach().cpu()
 
-        h_mean_norm, w_norm, distance = duality_distance(mu_c_dict, mu_G, w)
-        distance_list.append(distance)
-        w_list.append(w_norm)
-        h_list.append(h_mean_norm)
+    print("duality distance...")
+    h_mean_norm, w_norm, distance = duality_distance(mu_c_dict, mu_G, w)
+    distance_list.append(distance)
+    w_list.append(w_norm)
+    h_list.append(h_mean_norm)
 
-        print(f"epoch: {i * 10 + 9},h_mean_norm:{h_mean_norm}, w_norm:{w_norm},distance:{distance}, ")
+    print(f"epoch: {i * 10 + 9},h_mean_norm:{h_mean_norm}, w_norm:{w_norm},distance:{distance}, ")
+
+    # for i in range(20):
+    #     print(f"Loading checkpoint from {args.ckpt_path}: epoch={i * 10 + 9}.ckpt")
+    #     ckpt_path = os.path.join(args.ckpt_path, f"epoch={i * 10 + 9}.ckpt")
+    #     model = ModelModule.load_from_checkpoint(ckpt_path).to(args.device)
+    #     #model = ModelModule(args).to(args.device)
+    #
+    #     print("computing info...")
+    #     mu_G, mu_c_dict = compute_info(args = args,  model = model, dataloader = train_dataloader)
+    #
+    #     w = model.linear.weight.detach().cpu()
+    #
+    #     print("duality distance...")
+    #     h_mean_norm, w_norm, distance = duality_distance(mu_c_dict, mu_G, w)
+    #     distance_list.append(distance)
+    #     w_list.append(w_norm)
+    #     h_list.append(h_mean_norm)
+    #
+    #     print(f"epoch: {i * 10 + 9},h_mean_norm:{h_mean_norm}, w_norm:{w_norm},distance:{distance}, ")
 
     print("h_mean_norm:", h_list)
     print("w_norm:", w_list)
