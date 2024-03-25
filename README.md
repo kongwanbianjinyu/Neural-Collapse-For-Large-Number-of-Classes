@@ -1,5 +1,18 @@
 # Neural-Collapse-For-Large-Number-of-Classes
 
+
+## Setup
+
+1. Create conda environment and activate it :
+```conda create -n gnc python=3.10```
+```conda activate gnc```
+
+2. Install pytorch according to your cuda version: https://pytorch.org/get-started/locally/, for cuda 12.1:
+``` conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia ```
+
+3. Install pytorch-lightning 1.9.0(Must use this version):
+```pip install pytorch-lightning==1.9.0```
+
 ## Train
 
 1. Train with normalization of features and classifiers:
